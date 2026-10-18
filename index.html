@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loops — additive-meter metronome</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="rail">
+  <div class="wordmark">
+    <b>LOOPS</b>
+    <span>additive-meter metronome</span>
+  </div>
+
+  <div class="picker">
+    <label class="lbl" for="seqPick">Sequence</label>
+    <select id="seqPick"></select>
+    <button class="btn ghost" id="forgetBtn" hidden title="Remove this opened file from the list">Remove</button>
+  </div>
+
+  <div class="rail-actions">
+    <label class="btn" tabindex="0">Load JSON
+      <input type="file" id="fileInput" multiple accept=".json,application/json" hidden>
+    </label>
+    <button class="btn ghost" id="formatBtn">Format</button>
+  </div>
+</header>
+
+<main>
+
+  <section class="stage" id="stage">
+    <div class="stage-head">
+      <div class="now">
+        <span class="lbl">Measure</span>
+        <span class="now-figure"><b class="big" id="nowMeasure">—</b><i class="rep" id="nowRep"></i></span>
+        <span class="notation mono" id="nowNotation"></span>
+      </div>
+      <div class="tempo">
+        <span class="lbl">Tempo</span>
+        <div class="tempo-set">
+          <span class="glyph">&#9833;=</span>
+          <input id="bpm" type="number" min="20" max="300" step="1" value="72" aria-label="Beats per minute, quarter note">
+        </div>
+        <input id="bpmRange" class="slider" type="range" min="20" max="300" step="1" value="72" aria-label="Tempo slider">
+      </div>
+    </div>
+
+    <div class="score" id="score"></div>
+  </section>
+
+  <section class="transport">
+    <button class="play" id="play" aria-label="Play">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path id="playIcon" d="M8 5.5 19 12 8 18.5Z"/></svg>
+    </button>
+
+    <div class="controls">
+      <div class="field">
+        <label class="lbl" for="startM">Start</label>
+        <input id="startM" type="number" min="1" value="1">
+      </div>
+      <span class="thru">to</span>
+      <div class="field">
+        <label class="lbl" for="endM">End</label>
+        <input id="endM" type="number" min="1" value="1">
+      </div>
+      <button class="toggle" id="loopBtn" aria-pressed="false">Loop range</button>
+      <button class="toggle" id="countBtn" aria-pressed="false">Count in</button>
+      <div class="field count-n">
+        <label class="lbl" for="countN">8ths</label>
+        <input id="countN" type="number" min="1" max="16" value="4">
+      </div>
+    </div>
+
+    <div class="field vol">
+      <label class="lbl" for="vol">Level</label>
+      <input id="vol" class="slider" type="range" min="0" max="100" value="70">
+    </div>
+  </section>
+
+  <section class="list">
+    <div class="list-head">
+      <h2 class="lbl" id="seqTitle">No sequence</h2>
+      <p class="lbl dim" id="seqMeta"></p>
+    </div>
+    <ol class="measures" id="measures"></ol>
+    <div class="empty" id="empty">
+      <p>No sequences loaded.</p>
+      <p class="dim">Drop a JSON file anywhere on this page, or <button class="link" id="loadExamples">load the examples</button>.</p>
+    </div>
+  </section>
+
+  <p class="footnote dim">Click a measure to set the start. Shift-click to set the end. Space plays and stops.</p>
+
+</main>
+
+<div class="dropzone" id="dropzone" aria-hidden="true"><span>Release to load</span></div>
+
+<dialog class="sheet" id="formatDlg">
+  <form method="dialog"><button class="close" aria-label="Close">&times;</button></form>
+  <h2>File format</h2>
+  <p>A sequence is a JSON object with a <code>measures</code> array. Each measure is the notation string you already write.</p>
+<pre><code>{
+  "title": "Section 1",
+  "tempo": 72,
+  "measures": [
+    "3/8 + 3/32",
+    "4/8",
+    "2/8 + 1/16 + 1/8",
+    "7/32 + 5/32",
+    "6/8 *4",
+    "6/16:5",
+    { "notation": "3/8", "repeat": 2, "label": "B" },
+    { "phrase": ["2/8", "3/8", "2/8 + 1/16"], "repeat": 3 }
+  ]
+}</code></pre>
+  <dl class="legend">
+    <dt class="mono">5/8</dt><dd>Five eighths. Every one ticks.</dd>
+    <dt class="mono">7/32</dt><dd>A figure of seven 32nds. Only the first ticks.</dd>
+    <dt class="mono">3/16</dt><dd>Three 16ths. Only the first ticks.</dd>
+    <dt class="mono">+</dt><dd>Joins groups within one measure.</dd>
+    <dt class="mono">*4</dt><dd>Plays that measure four times. It stays one entry in the list.</dd>
+    <dt class="mono">6/16:5</dt><dd>Six 16ths at quintuplet speed — five in the time of four. Write <span class="mono">:5:4</span> to spell the ratio out; left off, it is the power of two below, so <span class="mono">:3</span> is three-in-two.</dd>
+    <dt class="mono">phrase</dt><dd>A run of measures that repeats as a block. The measures stay separate rows; the bracket down the right edge carries the count.</dd>
+  </dl>
+  <p class="dim">A bare array of strings works too. Tempo is the quarter note; a <code>tempo</code> field in the file sets the dial the first time that file turns up. Switching between sequences afterwards leaves the dial where you put it.</p>
+
+  <h2>The dropdown</h2>
+  <p>It lists every sequence sitting next to <code>index.html</code>. After you add, rename, or delete a <code>.json</code> file in that folder, run:</p>
+<pre><code>node sync.js</code></pre>
+  <p class="dim">That rewrites <code>library.js</code>, which is how the page knows what the folder holds — a page opened straight from disk isn’t allowed to look. If you serve the folder instead (<code>python3 -m http.server</code>), edits to a sequence show up on reload without syncing; only adding or removing files needs it. Dropping a file on the page still works and lands under “Opened”.</p>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="library.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
