@@ -789,11 +789,9 @@ function paintNow(measure, rep, pass) {
 function markPlaying(index) {
   document.querySelectorAll('.measure.playing').forEach(el => el.classList.remove('playing'));
   const row = document.querySelector(`.measure[data-index="${index}"]`);
-  if (row) {
-    row.classList.add('playing');
-    const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    row.scrollIntoView({ block: 'nearest', behavior: still ? 'auto' : 'smooth' });
-  }
+  // The row is highlighted but never scrolled to: yanking the page on every
+  // new measure fights whoever is reading or scrolling the list.
+  if (row) row.classList.add('playing');
 }
 
 function paintTransport() {
