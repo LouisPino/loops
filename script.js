@@ -976,11 +976,48 @@ async function ingest(fileList) {
 
 /* ---------- wiring ---------------------------------------- */
 
-function setTempo(v) {
+function setTempo(v, opts) {
   S.bpm = clamp(Math.round(v), 20, 300);
-  $('bpm').value = S.bpm;
+  // leave the field alone while it is being typed into, or a half-typed "1"
+  // on the way to "120" would be snapped up to the 20 floor under the cursor
+  if (!(opts && opts.typing)) $('bpm').value = S.bpm;
   $('bpmRange').value = S.bpm;
   save();
+}
+
+/* Typing a tempo: digits only, applied live once the number is in range,
+   clamped and written back only when the edit is committed (Enter / blur). */
+function wireTempoField() {
+  const field = $('bpm');
+  const typed = () => parseInt(field.value, 10);
+  const commit = () => setTempo(Number.isFinite(typed()) ? typed() : S.bpm);
+
+  // a click selects the whole number so typing replaces it outright
+  field.addEventListener('focus', () => field.select());
+  field.addEventListener('mouseup', e => e.preventDefault());
+
+  field.addEventListener('input', () => {
+    const digits = field.value.replace(/\D/g, '').slice(0, 3);
+    if (digits !== field.value) field.value = digits;
+    const n = typed();
+    if (n >= 20 && n <= 300) setTempo(n, { typing: true });
+  });
+  field.addEventListener('change', commit);
+  field.addEventListener('blur', commit);
+
+  field.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      commit();
+      field.blur();
+    } else if (e.key === 'Escape') {
+      field.value = S.bpm;
+      field.blur();
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      setTempo(S.bpm + (e.key === 'ArrowUp' ? 1 : -1) * (e.shiftKey ? 5 : 1));
+      field.select();
+    }
+  });
 }
 
 async function init() {
@@ -1005,7 +1042,7 @@ function wire() {
     if (S.activeId) removeFile(S.activeId);
   });
 
-  $('bpm').addEventListener('input', e => setTempo(e.target.value));
+  wireTempoField();
   $('bpmRange').addEventListener('input', e => setTempo(e.target.value));
 
   $('vol').addEventListener('input', e => {

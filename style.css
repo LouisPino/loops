@@ -210,9 +210,8 @@ main {
   background: none;
   color: var(--ink);
   text-align: right;
-  -moz-appearance: textfield;
+  cursor: text;
 }
-#bpm::-webkit-inner-spin-button { display: none; }
 #bpm:hover { border-bottom-color: var(--hair); }
 #bpm:focus { outline: none; border-bottom-color: var(--strike); }
 
@@ -240,6 +239,34 @@ main {
   background: var(--ink);
   border: 0; border-radius: 0;
 }
+
+/* the tempo slider is the main way to move the tempo mid-practice, so it
+   gets a long throw and a hit area far larger than its drawn track */
+#bpmRange {
+  display: block;
+  width: 320px;
+  height: 36px;
+  margin: 8px 0 0 auto;
+  touch-action: none;
+}
+#bpmRange::-webkit-slider-runnable-track { height: 3px; border-radius: 2px; }
+#bpmRange::-moz-range-track { height: 3px; border-radius: 2px; }
+#bpmRange::-webkit-slider-thumb {
+  width: 8px; height: 28px;
+  margin-top: -12.5px;
+  border-radius: 2px;
+  cursor: grab;
+}
+#bpmRange::-moz-range-thumb {
+  width: 8px; height: 28px;
+  border-radius: 2px;
+  cursor: grab;
+}
+#bpmRange:active::-webkit-slider-thumb { cursor: grabbing; }
+#bpmRange:active::-moz-range-thumb { cursor: grabbing; }
+#bpmRange:focus { outline: none; }
+#bpmRange:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 2px var(--strike); }
+#bpmRange:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 2px var(--strike); }
 
 /* the engraving */
 
@@ -592,6 +619,7 @@ main {
   .stage-head { flex-direction: column; gap: 14px; }
   .tempo { text-align: left; align-self: stretch; }
   .tempo-set { justify-content: flex-start; }
+  #bpmRange { width: 100%; margin-left: 0; }
   .big, #bpm { font-size: 46px; }
   .measure { grid-template-columns: 18px 38px 1fr 40px; }
   .measure .ministrip { display: none; }
